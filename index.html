@@ -1,4 +1,57 @@
-import { useState } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AIPlatform — AI-Driven Business Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .gradient-violet { background: linear-gradient(135deg, #7c3aed, #4f46e5); }
+  .gradient-blue { background: linear-gradient(135deg, #2563eb, #06b6d4); }
+  .gradient-orange { background: linear-gradient(135deg, #f97316, #ec4899); }
+  .gradient-dark { background: linear-gradient(135deg, #1f2937, #4b5563); }
+  .gradient-pink { background: linear-gradient(135deg, #f472b6, #fb923c); }
+  .gradient-green { background: linear-gradient(135deg, #10b981, #059669); }
+  .sidebar-transition { transition: width 0.2s ease; }
+  .pulse { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+  .hover-row:hover { background: #f9fafb; }
+  .nav-btn { width:100%; display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; font-size:14px; border:none; cursor:pointer; transition:all 0.15s; background:transparent; text-align:left; }
+  .nav-btn.active { background:#ede9fe; color:#6d28d9; font-weight:600; }
+  .nav-btn:not(.active) { color:#6b7280; }
+  .nav-btn:not(.active):hover { background:#f9fafb; color:#1f2937; }
+  .badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:9999px; font-weight:500; }
+  .stat-card { background:white; border-radius:16px; padding:20px; border:1px solid #f3f4f6; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  .score-bar-outer { flex:1; background:#f3f4f6; border-radius:9999px; height:8px; }
+  .score-bar-inner { height:8px; border-radius:9999px; }
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:#f1f1f1; }
+  ::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:4px; }
+  .btn-primary { background:#7c3aed; color:white; border:none; border-radius:10px; padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer; }
+  .btn-primary:hover { background:#6d28d9; }
+  .btn-secondary { background:white; border:1px solid #e5e7eb; border-radius:10px; padding:8px 16px; font-size:13px; cursor:pointer; }
+  .btn-secondary:hover { background:#f9fafb; }
+  .card { background:white; border-radius:16px; border:1px solid #f3f4f6; box-shadow:0 1px 3px rgba(0,0,0,.05); overflow:hidden; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; padding:12px 20px; font-size:11px; color:#9ca3af; font-weight:500; border-bottom:1px solid #f9fafb; }
+  td { padding:12px 20px; border-bottom:1px solid #f9fafb; }
+  tr:last-child td { border-bottom:none; }
+  input { width:100%; border:1px solid #e5e7eb; border-radius:10px; padding:10px 14px; font-size:13px; outline:none; font-family:inherit; }
+  input:focus { border-color:#7c3aed; box-shadow:0 0 0 2px rgba(124,58,237,.1); }
+  .step-circle { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  .step-done { background:#7c3aed; color:white; }
+  .step-pending { background:#f3f4f6; color:#9ca3af; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: "⊞" },
@@ -31,47 +84,45 @@ const ADS_CAMPAIGNS = [
   { name: "Urban Dental – Checkup Drive", platform: "Facebook + Insta", status: "Active", spend: "₹6,500", clicks: 3100, leads: 89, roi: "+410%" },
 ];
 
-function StatCard({ label, value, sub, color }) {
-  return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className={`text-3xl font-bold mt-1 ${color || "text-gray-800"}`}>{value}</p>
-      {sub && <p className="text-xs text-green-500 mt-1">{sub}</p>}
-    </div>
-  );
+const BADGE_COLORS = {
+  Active: { bg: "#dcfce7", color: "#15803d" },
+  Running: { bg: "#dbeafe", color: "#1d4ed8" },
+  Live: { bg: "#d1fae5", color: "#065f46" },
+  Paused: { bg: "#fef9c3", color: "#854d0e" },
+  "Needs Attention": { bg: "#fee2e2", color: "#991b1b" },
+  Building: { bg: "#ede9fe", color: "#5b21b6" },
+  Draft: { bg: "#f3f4f6", color: "#4b5563" },
+  Off: { bg: "#fee2e2", color: "#dc2626" },
+};
+
+function Badge({ text }) {
+  const s = BADGE_COLORS[text] || { bg: "#f3f4f6", color: "#4b5563" };
+  return <span className="badge" style={{ background: s.bg, color: s.color }}>{text}</span>;
 }
 
-function Badge({ text, type }) {
-  const colors = {
-    Active: "bg-green-100 text-green-700",
-    Running: "bg-blue-100 text-blue-700",
-    Live: "bg-emerald-100 text-emerald-700",
-    Paused: "bg-yellow-100 text-yellow-700",
-    "Needs Attention": "bg-red-100 text-red-700",
-    Building: "bg-purple-100 text-purple-700",
-    Draft: "bg-gray-100 text-gray-600",
-    Off: "bg-red-100 text-red-500",
-  };
+function StatCard({ label, value, sub, color }) {
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colors[text] || "bg-gray-100 text-gray-600"}`}>
-      {text}
-    </span>
+    <div className="stat-card">
+      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: 28, fontWeight: 800, color: color || "#1f2937", margin: "2px 0" }}>{value}</p>
+      {sub && <p style={{ fontSize: 11, color: "#10b981", marginTop: 2 }}>{sub}</p>}
+    </div>
   );
 }
 
 function ScoreBar({ score }) {
-  const color = score >= 80 ? "bg-green-500" : score >= 60 ? "bg-yellow-400" : "bg-red-400";
+  const color = score >= 80 ? "#10b981" : score >= 60 ? "#f59e0b" : "#ef4444";
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 bg-gray-100 rounded-full h-2">
-        <div className={`${color} h-2 rounded-full`} style={{ width: `${score}%` }} />
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div className="score-bar-outer">
+        <div className="score-bar-inner" style={{ width: `${score}%`, background: color }} />
       </div>
-      <span className="text-sm font-semibold text-gray-700">{score}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>{score}</span>
     </div>
   );
 }
 
-export default function App() {
+function App() {
   const [active, setActive] = useState("dashboard");
   const [buildingWebsite, setBuildingWebsite] = useState(null);
   const [built, setBuilt] = useState([]);
@@ -79,130 +130,93 @@ export default function App() {
   const [adStep, setAdStep] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  function startBuild(template) {
-    setBuildingWebsite(template.id);
-    setTimeout(() => {
-      setBuilt((b) => [...b, template.id]);
-      setBuildingWebsite(null);
-    }, 2500);
+  function startBuild(id) {
+    setBuildingWebsite(id);
+    setTimeout(() => { setBuilt(b => [...b, id]); setBuildingWebsite(null); }, 2500);
   }
 
+  const pageTitle = NAV_ITEMS.find(n => n.id === active)?.label;
+
   return (
-    <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
+    <div style={{ display: "flex", height: "100vh", background: "#f9fafb", overflow: "hidden" }}>
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? "w-56" : "w-16"} bg-white border-r border-gray-100 flex flex-col transition-all duration-200 shrink-0`}>
-        {/* Logo */}
-        <div className="flex items-center gap-2 px-4 py-5 border-b border-gray-100">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">A</div>
-          {sidebarOpen && <span className="font-bold text-gray-800 text-sm">AIPlatform</span>}
+      <aside className="sidebar-transition" style={{ width: sidebarOpen ? 220 : 64, background: "white", borderRight: "1px solid #f3f4f6", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "20px 16px", borderBottom: "1px solid #f3f4f6" }}>
+          <div className="gradient-violet" style={{ width: 32, height: 32, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>A</div>
+          {sidebarOpen && <span style={{ fontWeight: 800, fontSize: 14, color: "#1f2937" }}>AIPlatform</span>}
         </div>
-        <nav className="flex-1 py-4 space-y-1 px-2">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActive(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                active === item.id
-                  ? "bg-violet-50 text-violet-700 font-semibold"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
-              }`}
-            >
-              <span className="text-base">{item.icon}</span>
+        <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
+          {NAV_ITEMS.map(item => (
+            <button key={item.id} className={`nav-btn ${active === item.id ? "active" : ""}`} onClick={() => setActive(item.id)}>
+              <span style={{ fontSize: 16 }}>{item.icon}</span>
               {sidebarOpen && <span>{item.label}</span>}
             </button>
           ))}
         </nav>
-        <div className="p-3 border-t border-gray-100">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-orange-400 flex items-center justify-center text-white text-xs font-bold shrink-0">A</div>
-            {sidebarOpen && (
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-gray-800 truncate">Admin</p>
-                <p className="text-xs text-gray-400 truncate">Agency Owner</p>
-              </div>
-            )}
+        <div style={{ padding: 12, borderTop: "1px solid #f3f4f6" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div className="gradient-pink" style={{ width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>A</div>
+            {sidebarOpen && <div><p style={{ fontSize: 12, fontWeight: 700, color: "#1f2937", margin: 0 }}>Admin</p><p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>Agency Owner</p></div>}
           </div>
         </div>
       </aside>
 
       {/* Main */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-400 hover:text-gray-700 text-xl">☰</button>
+      <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* Header */}
+        <header style={{ background: "white", borderBottom: "1px solid #f3f4f6", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#9ca3af", padding: 0 }}>☰</button>
             <div>
-              <h1 className="text-lg font-bold text-gray-800">
-                {NAV_ITEMS.find((n) => n.id === active)?.label}
-              </h1>
-              <p className="text-xs text-gray-400">Welcome back, Admin</p>
+              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#1f2937" }}>{pageTitle}</h1>
+              <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>Welcome back, Admin</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="bg-violet-600 text-white text-xs px-3 py-1.5 rounded-lg font-medium">
-              ✨ AI Powered
-            </div>
-            <button className="relative text-gray-400 hover:text-gray-700">
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="gradient-violet" style={{ color: "white", fontSize: 12, padding: "6px 12px", borderRadius: 8, fontWeight: 600 }}>✨ AI Powered</div>
+            <button style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", position: "relative" }}>
               🔔
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">3</span>
+              <span style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, background: "#ef4444", borderRadius: "50%", color: "white", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>3</span>
             </button>
           </div>
         </header>
 
-        {/* Page Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Content */}
+        <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
 
           {/* DASHBOARD */}
           {active === "dashboard" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-4 gap-4">
-                <StatCard label="Total Clients" value="24" sub="↑ 3 this month" color="text-violet-600" />
-                <StatCard label="Active Websites" value="18" sub="↑ 2 new live" color="text-blue-600" />
-                <StatCard label="Ad Spend (Month)" value="₹1.4L" sub="↑ 12% ROI increase" color="text-orange-500" />
-                <StatCard label="Leads Generated" value="312" sub="↑ 28% vs last month" color="text-green-600" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
+                <StatCard label="Total Clients" value="24" sub="↑ 3 this month" color="#7c3aed" />
+                <StatCard label="Active Websites" value="18" sub="↑ 2 new live" color="#2563eb" />
+                <StatCard label="Ad Spend (Month)" value="₹1.4L" sub="↑ 12% ROI increase" color="#f97316" />
+                <StatCard label="Leads Generated" value="312" sub="↑ 28% vs last month" color="#10b981" />
               </div>
-
-              {/* AI Insight Banner */}
-              <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl p-5 text-white flex items-center justify-between">
+              <div className="gradient-violet" style={{ borderRadius: 16, padding: "20px 24px", color: "white", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
-                  <p className="text-sm opacity-80 mb-1">🤖 AI Insight</p>
-                  <p className="font-semibold text-lg">4 clients need attention — low review scores detected</p>
-                  <p className="text-sm opacity-70 mt-1">AI suggests launching reputation campaigns for Lakeview Realty</p>
+                  <p style={{ fontSize: 13, opacity: 0.8, margin: "0 0 4px" }}>🤖 AI Insight</p>
+                  <p style={{ fontSize: 17, fontWeight: 700, margin: "0 0 4px" }}>4 clients need attention — low review scores detected</p>
+                  <p style={{ fontSize: 13, opacity: 0.7, margin: 0 }}>AI suggests launching reputation campaigns for Lakeview Realty</p>
                 </div>
-                <button className="bg-white text-violet-700 font-semibold text-sm px-4 py-2 rounded-xl hover:bg-violet-50">
-                  Fix Now →
-                </button>
+                <button style={{ background: "white", color: "#6d28d9", fontWeight: 700, fontSize: 13, padding: "10px 18px", borderRadius: 12, border: "none", cursor: "pointer", flexShrink: 0, marginLeft: 20 }}>Fix Now →</button>
               </div>
-
-              {/* Client Table */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-                  <h2 className="font-semibold text-gray-800">Client Overview</h2>
-                  <button className="text-xs text-violet-600 font-medium">View All →</button>
+              <div className="card">
+                <div style={{ padding: "16px 20px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontWeight: 700, color: "#1f2937" }}>Client Overview</span>
+                  <span style={{ fontSize: 12, color: "#7c3aed", fontWeight: 500, cursor: "pointer" }}>View All →</span>
                 </div>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-gray-400 border-b border-gray-50">
-                      <th className="text-left px-5 py-3">Client</th>
-                      <th className="text-left px-5 py-3">AI Score</th>
-                      <th className="text-left px-5 py-3">Status</th>
-                      <th className="text-left px-5 py-3">Website</th>
-                      <th className="text-left px-5 py-3">Ads</th>
-                      <th className="text-left px-5 py-3">Reviews</th>
-                    </tr>
-                  </thead>
+                <table>
+                  <thead><tr><th>Client</th><th>AI Score</th><th>Status</th><th>Website</th><th>Ads</th><th>Reviews</th></tr></thead>
                   <tbody>
                     {CLIENTS.map((c, i) => (
-                      <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                        <td className="px-5 py-3 font-medium text-gray-800">{c.name}</td>
-                        <td className="px-5 py-3 w-36"><ScoreBar score={c.score} /></td>
-                        <td className="px-5 py-3"><Badge text={c.status} /></td>
-                        <td className="px-5 py-3"><Badge text={c.website} /></td>
-                        <td className="px-5 py-3"><Badge text={c.ads} /></td>
-                        <td className="px-5 py-3">
-                          <span className="text-yellow-500">★</span>
-                          <span className="ml-1 font-medium">{c.reviews}</span>
-                        </td>
+                      <tr key={i} className="hover-row">
+                        <td style={{ fontWeight: 600, color: "#1f2937" }}>{c.name}</td>
+                        <td style={{ width: 140 }}><ScoreBar score={c.score} /></td>
+                        <td><Badge text={c.status} /></td>
+                        <td><Badge text={c.website} /></td>
+                        <td><Badge text={c.ads} /></td>
+                        <td><span style={{ color: "#f59e0b" }}>★</span> <span style={{ fontWeight: 600 }}>{c.reviews}</span></td>
                       </tr>
                     ))}
                   </tbody>
@@ -213,41 +227,32 @@ export default function App() {
 
           {/* AI WEBSITES */}
           {active === "websites" && (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl p-6 text-white">
-                <p className="text-sm opacity-80 mb-1">🌐 AI Website Builder</p>
-                <h2 className="text-2xl font-bold">Build a Professional Website in Minutes</h2>
-                <p className="text-sm opacity-75 mt-2">AI automatically generates copy, images, and SEO — just pick a template</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <div className="gradient-blue" style={{ borderRadius: 16, padding: "24px", color: "white" }}>
+                <p style={{ fontSize: 13, opacity: 0.8, margin: "0 0 4px" }}>🌐 AI Website Builder</p>
+                <h2 style={{ margin: "0 0 6px", fontSize: 24, fontWeight: 800 }}>Build a Professional Website in Minutes</h2>
+                <p style={{ margin: 0, fontSize: 13, opacity: 0.75 }}>AI automatically generates copy, images, and SEO — just pick a template</p>
               </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                {AI_TEMPLATES.map((t) => (
-                  <div key={t.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-all">
-                    <div className="text-4xl mb-3">{t.img}</div>
-                    <h3 className="font-semibold text-gray-800">{t.name}</h3>
-                    <p className="text-xs text-gray-500 mt-1 mb-3">{t.desc}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">⏱ {t.time}</span>
-                      {built.includes(t.id) ? (
-                        <span className="text-xs bg-green-100 text-green-600 font-semibold px-3 py-1 rounded-lg">✓ Live</span>
-                      ) : buildingWebsite === t.id ? (
-                        <span className="text-xs bg-blue-100 text-blue-600 font-semibold px-3 py-1 rounded-lg animate-pulse">Building...</span>
-                      ) : (
-                        <button
-                          onClick={() => startBuild(t)}
-                          className="text-xs bg-violet-600 text-white font-semibold px-3 py-1.5 rounded-lg hover:bg-violet-700"
-                        >
-                          Build with AI
-                        </button>
-                      )}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+                {AI_TEMPLATES.map(t => (
+                  <div key={t.id} className="card" style={{ padding: 20 }}>
+                    <div style={{ fontSize: 36, marginBottom: 10 }}>{t.img}</div>
+                    <p style={{ fontWeight: 700, color: "#1f2937", margin: "0 0 4px" }}>{t.name}</p>
+                    <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 12px" }}>{t.desc}</p>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 11, color: "#9ca3af" }}>⏱ {t.time}</span>
+                      {built.includes(t.id)
+                        ? <span style={{ fontSize: 12, background: "#d1fae5", color: "#065f46", fontWeight: 700, padding: "4px 10px", borderRadius: 8 }}>✓ Live</span>
+                        : buildingWebsite === t.id
+                        ? <span className="pulse" style={{ fontSize: 12, background: "#dbeafe", color: "#1d4ed8", fontWeight: 700, padding: "4px 10px", borderRadius: 8 }}>Building...</span>
+                        : <button className="btn-primary" style={{ fontSize: 12, padding: "6px 12px" }} onClick={() => startBuild(t.id)}>Build with AI</button>}
                     </div>
                   </div>
                 ))}
               </div>
-
               {built.length > 0 && (
-                <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-                  <p className="text-green-700 font-medium">✅ {built.length} website(s) built and live — AI has auto-filled content, SEO tags, and contact forms!</p>
+                <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 16, padding: 16 }}>
+                  <p style={{ color: "#15803d", fontWeight: 600, margin: 0 }}>✅ {built.length} website(s) built and live — AI has auto-filled content, SEO tags, and contact forms!</p>
                 </div>
               )}
             </div>
@@ -255,117 +260,96 @@ export default function App() {
 
           {/* SOCIAL ADS */}
           {active === "ads" && (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl p-6 text-white flex items-center justify-between">
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <div className="gradient-orange" style={{ borderRadius: 16, padding: "20px 24px", color: "white", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
-                  <p className="text-sm opacity-80 mb-1">📣 AI Ad Manager</p>
-                  <h2 className="text-2xl font-bold">Create & Launch Social Media Ads</h2>
-                  <p className="text-sm opacity-75 mt-1">AI writes copy, designs creatives, targets audience automatically</p>
+                  <p style={{ fontSize: 13, opacity: 0.8, margin: "0 0 4px" }}>📣 AI Ad Manager</p>
+                  <h2 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800 }}>Create & Launch Social Media Ads</h2>
+                  <p style={{ margin: 0, fontSize: 13, opacity: 0.75 }}>AI writes copy, designs creatives, targets audience automatically</p>
                 </div>
-                <button
-                  onClick={() => { setCreatingAd(true); setAdStep(0); }}
-                  className="bg-white text-orange-600 font-bold px-5 py-2.5 rounded-xl hover:bg-orange-50 shrink-0"
-                >
-                  + Create Campaign
-                </button>
+                <button onClick={() => { setCreatingAd(true); setAdStep(0); }} style={{ background: "white", color: "#ea580c", fontWeight: 700, fontSize: 13, padding: "10px 18px", borderRadius: 12, border: "none", cursor: "pointer", flexShrink: 0, marginLeft: 20 }}>+ Create Campaign</button>
               </div>
 
-              {/* Campaign creation wizard */}
               {creatingAd && (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                  <div className="flex items-center gap-2 mb-5">
+                <div className="card" style={{ padding: 24 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20 }}>
                     {["Business Info", "Platform", "AI Generate", "Launch"].map((s, i) => (
-                      <div key={i} className="flex items-center gap-1">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i <= adStep ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-400"}`}>
-                          {i < adStep ? "✓" : i + 1}
-                        </div>
-                        <span className={`text-xs ${i <= adStep ? "text-violet-600 font-medium" : "text-gray-400"}`}>{s}</span>
-                        {i < 3 && <span className="text-gray-200 mx-1">›</span>}
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <div className={`step-circle ${i <= adStep ? "step-done" : "step-pending"}`}>{i < adStep ? "✓" : i + 1}</div>
+                        <span style={{ fontSize: 12, color: i <= adStep ? "#7c3aed" : "#9ca3af", fontWeight: i <= adStep ? 600 : 400 }}>{s}</span>
+                        {i < 3 && <span style={{ color: "#e5e7eb", margin: "0 4px" }}>›</span>}
                       </div>
                     ))}
                   </div>
                   {adStep === 0 && (
-                    <div className="space-y-3">
-                      <h3 className="font-semibold">Business Details</h3>
-                      <input className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm" placeholder="Business Name" />
-                      <input className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm" placeholder="Industry (e.g. Restaurant, Gym, Dental)" />
-                      <input className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm" placeholder="Campaign Goal (e.g. Get leads, drive traffic)" />
-                      <button onClick={() => setAdStep(1)} className="bg-violet-600 text-white px-5 py-2 rounded-xl text-sm font-medium">Next →</button>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <p style={{ fontWeight: 700, margin: "0 0 4px" }}>Business Details</p>
+                      <input placeholder="Business Name" />
+                      <input placeholder="Industry (e.g. Restaurant, Gym, Dental)" />
+                      <input placeholder="Campaign Goal (e.g. Get leads, drive traffic)" />
+                      <button className="btn-primary" style={{ width: "fit-content" }} onClick={() => setAdStep(1)}>Next →</button>
                     </div>
                   )}
                   {adStep === 1 && (
-                    <div className="space-y-3">
-                      <h3 className="font-semibold">Select Platforms</h3>
-                      <div className="grid grid-cols-3 gap-3">
-                        {["Facebook", "Instagram", "Google Ads"].map((p) => (
-                          <div key={p} className="border-2 border-violet-200 bg-violet-50 rounded-xl p-3 text-center cursor-pointer hover:border-violet-500">
-                            <p className="text-sm font-medium text-violet-700">{p}</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <p style={{ fontWeight: 700, margin: "0 0 4px" }}>Select Platforms</p>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+                        {["Facebook", "Instagram", "Google Ads"].map(p => (
+                          <div key={p} style={{ border: "2px solid #c4b5fd", background: "#ede9fe", borderRadius: 12, padding: 12, textAlign: "center", cursor: "pointer" }}>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: "#5b21b6", margin: 0 }}>{p}</p>
                           </div>
                         ))}
                       </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => setAdStep(0)} className="border border-gray-200 px-4 py-2 rounded-xl text-sm">← Back</button>
-                        <button onClick={() => setAdStep(2)} className="bg-violet-600 text-white px-5 py-2 rounded-xl text-sm font-medium">Next →</button>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button className="btn-secondary" onClick={() => setAdStep(0)}>← Back</button>
+                        <button className="btn-primary" onClick={() => setAdStep(2)}>Next →</button>
                       </div>
                     </div>
                   )}
                   {adStep === 2 && (
-                    <div className="space-y-3">
-                      <h3 className="font-semibold">🤖 AI Generated Ad Copy</h3>
-                      <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                        <p className="text-xs text-gray-400 mb-1">Headline</p>
-                        <p className="font-semibold text-gray-800">"Get 30% Off This Season — Book Your Appointment Today!"</p>
-                        <p className="text-xs text-gray-400 mt-3 mb-1">Body Copy</p>
-                        <p className="text-sm text-gray-600">We're offering exclusive deals for new & existing customers. Don't miss out — limited slots available. Click below to book instantly!</p>
-                        <p className="text-xs text-gray-400 mt-3 mb-1">Target Audience (AI Suggested)</p>
-                        <p className="text-sm text-gray-600">Age 25–45 · 10 km radius · Interests: Health, Wellness, Local Services</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <p style={{ fontWeight: 700, margin: "0 0 4px" }}>🤖 AI Generated Ad Copy</p>
+                      <div style={{ background: "#f9fafb", borderRadius: 12, padding: 16, border: "1px solid #f3f4f6" }}>
+                        <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 4px" }}>Headline</p>
+                        <p style={{ fontWeight: 700, color: "#1f2937", margin: "0 0 12px" }}>"Get 30% Off This Season — Book Your Appointment Today!"</p>
+                        <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 4px" }}>Body Copy</p>
+                        <p style={{ fontSize: 13, color: "#4b5563", margin: "0 0 12px" }}>We're offering exclusive deals for new & existing customers. Don't miss out — limited slots available. Click below to book instantly!</p>
+                        <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 4px" }}>Target Audience (AI Suggested)</p>
+                        <p style={{ fontSize: 13, color: "#4b5563", margin: 0 }}>Age 25–45 · 10 km radius · Interests: Health, Wellness, Local Services</p>
                       </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => setAdStep(1)} className="border border-gray-200 px-4 py-2 rounded-xl text-sm">← Back</button>
-                        <button onClick={() => setAdStep(3)} className="bg-violet-600 text-white px-5 py-2 rounded-xl text-sm font-medium">Looks Good →</button>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button className="btn-secondary" onClick={() => setAdStep(1)}>← Back</button>
+                        <button className="btn-primary" onClick={() => setAdStep(3)}>Looks Good →</button>
                       </div>
                     </div>
                   )}
                   {adStep === 3 && (
-                    <div className="space-y-3 text-center">
-                      <div className="text-5xl">🚀</div>
-                      <h3 className="font-bold text-xl text-gray-800">Campaign Ready to Launch!</h3>
-                      <p className="text-sm text-gray-500">AI has prepared your ad creative, copy, audience targeting, and budget allocation.</p>
-                      <button onClick={() => { setCreatingAd(false); }} className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-8 py-3 rounded-xl font-bold text-sm hover:opacity-90">
-                        🚀 Launch Campaign Now
-                      </button>
+                    <div style={{ textAlign: "center", padding: "20px 0" }}>
+                      <div style={{ fontSize: 52, marginBottom: 12 }}>🚀</div>
+                      <h3 style={{ fontSize: 20, fontWeight: 800, color: "#1f2937", margin: "0 0 8px" }}>Campaign Ready to Launch!</h3>
+                      <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 20px" }}>AI has prepared your ad creative, copy, audience targeting, and budget allocation.</p>
+                      <button onClick={() => setCreatingAd(false)} className="gradient-orange" style={{ color: "white", border: "none", padding: "12px 28px", borderRadius: 12, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>🚀 Launch Campaign Now</button>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Active Campaigns */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100">
-                  <h2 className="font-semibold text-gray-800">Active Campaigns</h2>
+              <div className="card">
+                <div style={{ padding: "16px 20px", borderBottom: "1px solid #f3f4f6" }}>
+                  <span style={{ fontWeight: 700, color: "#1f2937" }}>Active Campaigns</span>
                 </div>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-gray-400 border-b border-gray-50">
-                      <th className="text-left px-5 py-3">Campaign</th>
-                      <th className="text-left px-5 py-3">Platform</th>
-                      <th className="text-left px-5 py-3">Status</th>
-                      <th className="text-left px-5 py-3">Spend</th>
-                      <th className="text-left px-5 py-3">Clicks</th>
-                      <th className="text-left px-5 py-3">Leads</th>
-                      <th className="text-left px-5 py-3">ROI</th>
-                    </tr>
-                  </thead>
+                <table>
+                  <thead><tr><th>Campaign</th><th>Platform</th><th>Status</th><th>Spend</th><th>Clicks</th><th>Leads</th><th>ROI</th></tr></thead>
                   <tbody>
                     {ADS_CAMPAIGNS.map((c, i) => (
-                      <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
-                        <td className="px-5 py-3 font-medium text-gray-800">{c.name}</td>
-                        <td className="px-5 py-3 text-gray-500">{c.platform}</td>
-                        <td className="px-5 py-3"><Badge text={c.status} /></td>
-                        <td className="px-5 py-3 font-medium">{c.spend}</td>
-                        <td className="px-5 py-3 text-gray-600">{c.clicks.toLocaleString()}</td>
-                        <td className="px-5 py-3 text-blue-600 font-semibold">{c.leads}</td>
-                        <td className="px-5 py-3 text-green-600 font-bold">{c.roi}</td>
+                      <tr key={i} className="hover-row">
+                        <td style={{ fontWeight: 600, color: "#1f2937" }}>{c.name}</td>
+                        <td style={{ color: "#6b7280" }}>{c.platform}</td>
+                        <td><Badge text={c.status} /></td>
+                        <td style={{ fontWeight: 600 }}>{c.spend}</td>
+                        <td style={{ color: "#4b5563" }}>{c.clicks.toLocaleString()}</td>
+                        <td style={{ color: "#2563eb", fontWeight: 700 }}>{c.leads}</td>
+                        <td style={{ color: "#10b981", fontWeight: 800 }}>{c.roi}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -376,112 +360,100 @@ export default function App() {
 
           {/* REPUTATION */}
           {active === "reputation" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <StatCard label="Avg. Rating" value="4.5★" sub="Across all clients" color="text-yellow-500" />
-                <StatCard label="Total Reviews" value="1,284" sub="↑ 84 this month" color="text-blue-600" />
-                <StatCard label="Response Rate" value="94%" sub="AI auto-replies enabled" color="text-green-600" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+                <StatCard label="Avg. Rating" value="4.5★" sub="Across all clients" color="#f59e0b" />
+                <StatCard label="Total Reviews" value="1,284" sub="↑ 84 this month" color="#2563eb" />
+                <StatCard label="Response Rate" value="94%" sub="AI auto-replies enabled" color="#10b981" />
               </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Review Feed</h2>
+              <div className="card" style={{ padding: 20 }}>
+                <p style={{ fontWeight: 700, color: "#1f2937", margin: "0 0 16px" }}>Review Feed</p>
                 {[
                   { client: "Urban Dental Clinic", reviewer: "Rahul K.", rating: 5, text: "Excellent service! Very professional staff.", time: "2 hours ago", replied: true },
                   { client: "Sunrise Bakery", reviewer: "Priya M.", rating: 4, text: "Fresh pastries every day. Loved the ambiance!", time: "5 hours ago", replied: false },
                   { client: "Lakeview Realty", reviewer: "Amit S.", rating: 2, text: "Response time was slow. Could improve.", time: "Yesterday", replied: false },
                 ].map((r, i) => (
-                  <div key={i} className="border-b border-gray-50 last:border-0 py-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-xs text-violet-600 font-medium">{r.client}</p>
-                        <p className="font-medium text-gray-800">{r.reviewer} <span className="text-yellow-400">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span></p>
-                        <p className="text-sm text-gray-500 mt-1">{r.text}</p>
-                        <p className="text-xs text-gray-400 mt-1">{r.time}</p>
-                      </div>
-                      {r.replied ? (
-                        <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-lg">✓ Replied</span>
-                      ) : (
-                        <button className="text-xs bg-violet-600 text-white px-3 py-1.5 rounded-lg hover:bg-violet-700">AI Reply</button>
-                      )}
+                  <div key={i} style={{ borderBottom: i < 2 ? "1px solid #f9fafb" : "none", padding: "14px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div>
+                      <p style={{ fontSize: 12, color: "#7c3aed", fontWeight: 600, margin: "0 0 2px" }}>{r.client}</p>
+                      <p style={{ fontWeight: 600, color: "#1f2937", margin: "0 0 4px" }}>{r.reviewer} <span style={{ color: "#f59e0b" }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span></p>
+                      <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 4px" }}>{r.text}</p>
+                      <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>{r.time}</p>
                     </div>
+                    {r.replied
+                      ? <span style={{ fontSize: 12, background: "#d1fae5", color: "#065f46", padding: "4px 10px", borderRadius: 8, flexShrink: 0 }}>✓ Replied</span>
+                      : <button className="btn-primary" style={{ fontSize: 12, padding: "6px 12px", flexShrink: 0 }}>AI Reply</button>}
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* LEADS & CRM */}
+          {/* LEADS */}
           {active === "leads" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-4 gap-4">
-                <StatCard label="New Leads" value="47" sub="This week" color="text-violet-600" />
-                <StatCard label="Contacted" value="31" sub="65% contact rate" color="text-blue-600" />
-                <StatCard label="Qualified" value="19" sub="61% qualify rate" color="text-orange-500" />
-                <StatCard label="Converted" value="8" sub="42% close rate" color="text-green-600" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
+                <StatCard label="New Leads" value="47" sub="This week" color="#7c3aed" />
+                <StatCard label="Contacted" value="31" sub="65% contact rate" color="#2563eb" />
+                <StatCard label="Qualified" value="19" sub="61% qualify rate" color="#f97316" />
+                <StatCard label="Converted" value="8" sub="42% close rate" color="#10b981" />
               </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Recent Leads</h2>
+              <div className="card" style={{ padding: 20 }}>
+                <p style={{ fontWeight: 700, color: "#1f2937", margin: "0 0 16px" }}>Recent Leads</p>
                 {[
-                  { name: "Deepak Sharma", source: "Facebook Ad", client: "Urban Dental", status: "Hot", time: "10 min ago" },
-                  { name: "Neha Gupta", source: "Website Form", client: "Peak Fitness", status: "Warm", time: "1 hr ago" },
-                  { name: "Rohit Verma", source: "Google Ad", client: "Sunrise Bakery", status: "New", time: "3 hrs ago" },
-                  { name: "Anita Joshi", source: "Instagram Ad", client: "Lakeview Realty", status: "Cold", time: "Yesterday" },
-                ].map((l, i) => (
-                  <div key={i} className="flex items-center justify-between border-b border-gray-50 last:border-0 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-400 to-indigo-400 flex items-center justify-center text-white text-sm font-bold">
-                        {l.name[0]}
+                  { name: "Deepak Sharma", source: "Facebook Ad", client: "Urban Dental", status: "Hot" },
+                  { name: "Neha Gupta", source: "Website Form", client: "Peak Fitness", status: "Warm" },
+                  { name: "Rohit Verma", source: "Google Ad", client: "Sunrise Bakery", status: "New" },
+                  { name: "Anita Joshi", source: "Instagram Ad", client: "Lakeview Realty", status: "Cold" },
+                ].map((l, i) => {
+                  const sc = { Hot: { bg: "#fee2e2", color: "#dc2626" }, Warm: { bg: "#ffedd5", color: "#c2410c" }, New: { bg: "#dbeafe", color: "#1d4ed8" }, Cold: { bg: "#f3f4f6", color: "#4b5563" } }[l.status];
+                  return (
+                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: i < 3 ? "1px solid #f9fafb" : "none", padding: "12px 0" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div className="gradient-violet" style={{ width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>{l.name[0]}</div>
+                        <div>
+                          <p style={{ fontWeight: 600, color: "#1f2937", margin: 0, fontSize: 13 }}>{l.name}</p>
+                          <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>{l.source} · {l.client}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-800 text-sm">{l.name}</p>
-                        <p className="text-xs text-gray-400">{l.source} · {l.client}</p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span className="badge" style={{ background: sc.bg, color: sc.color }}>{l.status}</span>
+                        <button className="btn-primary" style={{ fontSize: 12, padding: "5px 10px" }}>Contact</button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${l.status === "Hot" ? "bg-red-100 text-red-600" : l.status === "Warm" ? "bg-orange-100 text-orange-600" : l.status === "New" ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500"}`}>
-                        {l.status}
-                      </span>
-                      <span className="text-xs text-gray-400">{l.time}</span>
-                      <button className="text-xs bg-violet-600 text-white px-2.5 py-1 rounded-lg">Contact</button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* REPORTS */}
           {active === "reports" && (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-r from-gray-800 to-gray-600 rounded-2xl p-6 text-white">
-                <p className="text-sm opacity-70 mb-1">📊 AI Reports</p>
-                <h2 className="text-2xl font-bold">Auto-Generated Client Reports</h2>
-                <p className="text-sm opacity-60 mt-1">AI compiles performance data and sends branded reports to clients automatically</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <div className="gradient-dark" style={{ borderRadius: 16, padding: "24px", color: "white" }}>
+                <p style={{ fontSize: 13, opacity: 0.7, margin: "0 0 4px" }}>📊 AI Reports</p>
+                <h2 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 800 }}>Auto-Generated Client Reports</h2>
+                <p style={{ margin: 0, fontSize: 13, opacity: 0.6 }}>AI compiles performance data and sends branded reports to clients automatically</p>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
                 {CLIENTS.map((c, i) => (
-                  <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                    <h3 className="font-semibold text-gray-800">{c.name}</h3>
-                    <div className="mt-3 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">AI Score</span>
-                        <span className="font-bold text-violet-600">{c.score}/100</span>
+                  <div key={i} className="card" style={{ padding: 20 }}>
+                    <p style={{ fontWeight: 700, color: "#1f2937", margin: "0 0 12px" }}>{c.name}</p>
+                    {[["AI Score", `${c.score}/100`, "#7c3aed"], ["Reviews", `★ ${c.reviews}`, "#1f2937"]].map(([k, v, col]) => (
+                      <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 8 }}>
+                        <span style={{ color: "#6b7280" }}>{k}</span>
+                        <span style={{ fontWeight: 700, color: col }}>{v}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Reviews</span>
-                        <span className="font-medium">★ {c.reviews}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Website</span>
-                        <Badge text={c.website} />
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Ads</span>
-                        <Badge text={c.ads} />
-                      </div>
+                    ))}
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 8 }}>
+                      <span style={{ color: "#6b7280" }}>Website</span>
+                      <Badge text={c.website} />
                     </div>
-                    <button className="mt-4 w-full text-xs bg-gray-800 text-white py-2 rounded-xl hover:bg-gray-700">
-                      📄 Generate Report
-                    </button>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 16 }}>
+                      <span style={{ color: "#6b7280" }}>Ads</span>
+                      <Badge text={c.ads} />
+                    </div>
+                    <button style={{ width: "100%", background: "#1f2937", color: "white", border: "none", borderRadius: 10, padding: "9px 0", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>📄 Generate Report</button>
                   </div>
                 ))}
               </div>
@@ -493,3 +465,8 @@ export default function App() {
     </div>
   );
 }
+
+ReactDOM.render(<App />, document.getElementById("root"));
+</script>
+</body>
+</html>
